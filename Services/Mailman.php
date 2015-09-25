@@ -40,7 +40,7 @@
  * @link      http://php-mailman.sourceforge.net/
  */
 
-require_once 'Services/Mailman/Exception.php';
+require_once 'Mailman/Exception.php';
 
 /**
  * Mailman Class
