@@ -40,7 +40,6 @@
  * @link      http://php-mailman.sourceforge.net/
  */
 
-require_once 'HTTP/Request2.php';
 require_once 'Services/Mailman/Exception.php';
 
 /**
@@ -75,25 +74,17 @@ class Services_Mailman
      */
     protected $adminPw;
     /**
-     * A HTTP request instance
-     *
-     * @var HTTP_Request2 $request
-     */
-    public $request = null;
-    /**
      * Constructor
      *
      * @param string        $adminUrl Set the URL to the Mailman "Admin Links" page
      * @param string        $list     Set the name of the list
      * @param string        $adminPw  Set admin password of the list
-     * @param HTTP_Request2 $request  Provide your HTTP request instance
      */
-    public function __construct($adminUrl, $list = '', $adminPw = '', HTTP_Request2 $request = null)
+    public function __construct($adminUrl, $list = '', $adminPw = '')
     {
         $this->setList($list);
         $this->setAdminUrl($adminUrl);
         $this->setAdminPw($adminPw);
-        $this->setRequest($request);
     }
 
     /**
@@ -172,18 +163,6 @@ class Services_Mailman
         $this->adminPw = $string;
         return $this;
     }
-    /**
-     * Sets the request object
-     *
-     * @param HTTP_Request2 $object A HTTP request instance (otherwise one will be created)
-     *
-     * @return Services_Mailman
-     */
-    public function setRequest(HTTP_Request2 $object = null)
-    {
-        $this->request = ($object instanceof HTTP_Request2) ? $object : new HTTP_Request2();
-        return $this;
-    }
 
     /**
      * Fetches the HTML to be parsed
@@ -203,13 +182,18 @@ class Services_Mailman
                 Services_Mailman_Exception::INVALID_URL
             );
         }
-        try {
-            $this->request->setUrl($url);
-            $this->request->setMethod('GET');
-            $html = $this->request->send()->getBody();
-        } catch (HTTP_Request2_Exception $e) {
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_FAILONERROR => true,
+            CURLOPT_TIMEOUT => 30
+        ));
+        $html = curl_exec($curl);
+        if(curl_errno($curl)){
             throw new Services_Mailman_Exception(
-                $e,
+                curl_error($curl),
                 Services_Mailman_Exception::HTML_FETCH
             );
         } 
